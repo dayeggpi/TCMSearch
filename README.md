@@ -2,7 +2,7 @@
 
 Quick-search launcher for [Total Commander](https://www.ghisler.com/) button bars. Hit a hotkey, type a regex, press Enter — the matched command runs instantly.
 
-![screenshot placeholder](screenshot.png)
+![screenshot placeholder](https://raw.githubusercontent.com/dayeggpi/tcmd-search-buttons/refs/heads/main/TCMSearch_i4OV3FmKnP.png)
 
 ## Features
 
