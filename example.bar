@@ -1,0 +1,50 @@
+[Buttonbar]
+Buttoncount=8
+
+menu1=Notepad
+cmd1=C:\Windows\notepad.exe
+param1=
+path1=
+tooltip1=Open Windows Notepad text editor
+
+menu2=Calculator
+cmd2=C:\Windows\System32\calc.exe
+param2=
+path2=
+tooltip2=Open Windows Calculator
+
+menu3=Open Command Prompt Here
+cmd3=C:\Windows\System32\cmd.exe
+param3=
+path3=%COMMANDER_PATH%
+tooltip3=Launch cmd.exe with working dir set to active TC panel path
+
+menu4=View Mode List
+cmd4=cm_SrcViewModeList
+param4=
+path4=
+tooltip4=TC internal: show source panel view mode list
+
+menu5=New Folder
+cmd5=cm_MkDir
+param5=
+path5=
+tooltip5=TC internal: create new directory in active panel
+
+menu6=Compare Files
+cmd6=cm_CompareFiles
+param6=
+path6=
+tooltip6=TC internal: compare selected files side by side
+
+menu7=Edit with Notepad++
+cmd7=C:\Program Files\Notepad++\notepad++.exe
+param7=%COMMANDER_NAME%
+path7=%COMMANDER_PATH%
+tooltip7=Open currently selected file in Notepad++
+
+menu8=Pack Files
+cmd8=cm_PackFiles
+param8=
+path8=
+tooltip8=TC internal: pack selected files into archive
