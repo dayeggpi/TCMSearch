@@ -1,5 +1,6 @@
 import configparser
 import os
+import sys
 import winreg
 from pathlib import Path
 
@@ -38,7 +39,13 @@ def _find_tc_path() -> str:
 class Config:
     def __init__(self, path: Path | None = None):
         if path is None:
-            path = Path(__file__).parent / 'config.ini'
+            # When frozen by PyInstaller, __file__ is inside the temp _MEIPASS
+            # extraction dir which is gone after exit. Use the exe's own directory.
+            if getattr(sys, 'frozen', False):
+                base = Path(sys.executable).parent
+            else:
+                base = Path(__file__).parent
+            path = base / 'config.ini'
         self.path = path
         self._cfg = configparser.ConfigParser()
         self._load()
@@ -53,6 +60,10 @@ class Config:
                 self._cfg['App'][k] = v
         if not self._cfg['App']['tc_path']:
             self._cfg['App']['tc_path'] = _find_tc_path()
+
+    def reload(self):
+        self._cfg = configparser.ConfigParser()
+        self._load()
 
     def save(self):
         with open(self.path, 'w', encoding='utf-8') as fh:

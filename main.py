@@ -106,7 +106,7 @@ class TCMSearch:
         self.tray.setToolTip('TCMSearch')
 
         menu = QMenu()
-        a_reload = QAction('Reload Bars', menu)
+        a_reload = QAction('Reload Bars and config', menu)
         a_reload.triggered.connect(self._reload_buttons)
         menu.addAction(a_reload)
 
@@ -133,7 +133,8 @@ class TCMSearch:
             self._toggle_overlay()
 
     def _open_settings(self):
-        self.config.save()
+        if not self.config.path.exists():
+            self.config.save()
         os.startfile(str(self.config.path))
 
     def _show_about(self):
@@ -143,6 +144,7 @@ class TCMSearch:
     # ── buttons ────────────────────────────────────────────────────────────
 
     def _reload_buttons(self):
+        self.config.reload()
         tc_path = self.config.get('tc_path')
         self.buttons = load_all_buttons(tc_path)
         if self.overlay:
@@ -213,7 +215,8 @@ class TCMSearch:
         self.app.quit()
 
     def run(self):
-        self.config.save()
+        if not self.config.path.exists():
+            self.config.save()
         sys.exit(self.app.exec())
 
 
