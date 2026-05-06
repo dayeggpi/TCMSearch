@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PyQt6.QtCore import QAbstractNativeEventFilter, QAbstractEventDispatcher
 from PyQt6.QtGui import QIcon, QAction, QPixmap, QColor
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QDialog, QVBoxLayout, QLabel
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QDialog, QVBoxLayout, QLabel, QMessageBox
 from PyQt6.QtCore import Qt
 
 from config import Config
@@ -50,7 +50,7 @@ class _AboutDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(8)
 
-        title = QLabel('<b>TCMSearch</b>')
+        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.1</span>')
         title.setStyleSheet('font-size: 15px; color: #cdd6f4;')
         layout.addWidget(title)
 
@@ -197,13 +197,17 @@ class TCMSearch:
         try:
             execute_button(btn, self.config.get('tc_path'))
         except Exception as exc:
-            self.tray.showMessage(
-                'TCMSearch', f'Failed to run:\n{btn.cmd}\n\n{exc}',
-                QSystemTrayIcon.MessageIcon.Warning, 4000,
-            )
-        hwnd = find_tc_hwnd()
-        if hwnd:
-            ctypes.windll.user32.SetForegroundWindow(hwnd)
+            if btn.admin:
+                QMessageBox.critical(None, 'TCMSearch', f'Failed to run as admin:\n{btn.cmd}\n\n{exc}')
+            else:
+                self.tray.showMessage(
+                    'TCMSearch', f'Failed to run:\n{btn.cmd}\n\n{exc}',
+                    QSystemTrayIcon.MessageIcon.Warning, 4000,
+                )
+        if not btn.admin:
+            hwnd = find_tc_hwnd()
+            if hwnd:
+                ctypes.windll.user32.SetForegroundWindow(hwnd)
 
     # ── lifecycle ──────────────────────────────────────────────────────────
 
