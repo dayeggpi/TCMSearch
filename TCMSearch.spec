@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('app.ico', '.')],
+    datas=[('app.ico', '.'), ('internal_cmd.md', '.')],
     hiddenimports=['PyQt6.QtCore', 'PyQt6.QtGui', 'PyQt6.QtWidgets'],
     hookspath=[],
     hooksconfig={},
