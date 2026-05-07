@@ -69,6 +69,8 @@ hotkey_mod = 2                    ; modifier bitmask (2 = Ctrl, 1 = Alt, 4 = Shi
 hotkey_vk  = 32                   ; virtual key code (32 = Space)
 window_width  = 660
 window_height = 440
+window_x = 1057
+window_y = 722
 ```
 
 ### Hotkey examples
