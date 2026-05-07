@@ -63,7 +63,7 @@ Download [UPX](https://github.com/upx/upx/releases) and set `UPX_DIR` in `build.
 
 ```ini
 [App]
-tc_path    = C:\totalcmd          ; TC installation directory (auto-detected)
+tc_path    = C:\totalcmd          ; TC installation directory (auto-detected if not set)
 tc_only    = true                 ; only trigger hotkey when TC is foreground
 hotkey_mod = 2                    ; modifier bitmask (2 = Ctrl, 1 = Alt, 4 = Shift)
 hotkey_vk  = 32                   ; virtual key code (32 = Space)
