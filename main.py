@@ -50,7 +50,7 @@ class _AboutDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(8)
 
-        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.1</span>')
+        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.2</span>')
         title.setStyleSheet('font-size: 15px; color: #cdd6f4;')
         layout.addWidget(title)
 
@@ -183,6 +183,12 @@ class TCMSearch:
 
     def _build_overlay(self):
         self.overlay = SearchOverlay(self.buttons, self._run_button)
+        self.overlay.position_changed.connect(self._save_position)
+
+    def _save_position(self, x: int, y: int):
+        self.config.set('window_x', x)
+        self.config.set('window_y', y)
+        self.config.save()
 
     def _toggle_overlay(self):
         if self.overlay.isVisible():
@@ -191,6 +197,8 @@ class TCMSearch:
             self.overlay.show_over_tc(
                 self.config.get_int('window_width') or 660,
                 self.config.get_int('window_height') or 440,
+                self.config.get_int('window_x'),
+                self.config.get_int('window_y'),
             )
 
     def _run_button(self, btn):

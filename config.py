@@ -11,6 +11,8 @@ _DEFAULTS = {
     'hotkey_vk': str(0x20),      # VK_SPACE
     'window_width': '660',
     'window_height': '440',
+    'window_x': '-1',            # -1 = auto-center over TC / screen
+    'window_y': '-1',
 }
 
 

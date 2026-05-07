@@ -3,7 +3,7 @@ import ctypes.wintypes
 import re
 from typing import Callable
 
-from PyQt6.QtCore import Qt, QEvent, QAbstractTableModel, QModelIndex
+from PyQt6.QtCore import Qt, QEvent, QAbstractTableModel, QModelIndex, QPoint, pyqtSignal
 from PyQt6.QtGui import QKeyEvent, QColor, QFont, QPixmap
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLineEdit, QTableView,
@@ -104,15 +104,19 @@ class _ButtonModel(QAbstractTableModel):
         col = index.column()
 
         if role == Qt.ItemDataRole.DisplayRole:
-            if col == 0: return btn.menu
+            if col == 0:
+                return ('★ ' if btn.admin else '') + btn.menu
             if col == 1: return btn.display_cmd
             if col == 2: return btn.source_bar
 
         if role == Qt.ItemDataRole.ToolTipRole:
-            return btn.tooltip or btn.display_cmd
+            return btn.display_cmd
 
         if col == 2 and role == Qt.ItemDataRole.FontRole:
             return _BAR_FONT
+
+        if col == 0 and role == Qt.ItemDataRole.ForegroundRole and btn.admin:
+            return QColor('#fab387')
 
         return None
 
@@ -129,11 +133,14 @@ class _ButtonModel(QAbstractTableModel):
 
 
 class SearchOverlay(QDialog):
+    position_changed = pyqtSignal(int, int)
+
     def __init__(self, buttons: list[Button], execute_fn: Callable, parent=None):
         super().__init__(parent)
         self.all_buttons = buttons
         self._execute_fn = execute_fn
         self._model = _ButtonModel()
+        self._drag_pos: QPoint | None = None
         self._build_ui()
         self._configure_window()
 
@@ -187,7 +194,7 @@ class SearchOverlay(QDialog):
 
             filtered = [
                 btn for btn in self.all_buttons
-                if match(btn.menu) or match(btn.cmd) or (btn.tooltip and match(btn.tooltip))
+                if match(btn.menu) or match(btn.cmd)
             ]
 
         self._model.set_buttons(filtered)
@@ -201,6 +208,23 @@ class SearchOverlay(QDialog):
         if btn:
             self.hide()
             self._execute_fn(btn)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._drag_pos is not None and event.buttons() == Qt.MouseButton.LeftButton:
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self._drag_pos is not None:
+            self._drag_pos = None
+            pos = self.pos()
+            self.position_changed.emit(pos.x(), pos.y())
+        super().mouseReleaseEvent(event)
 
     def changeEvent(self, event):
         if event.type() == QEvent.Type.ActivationChange and not self.isActiveWindow():
@@ -224,20 +248,25 @@ class SearchOverlay(QDialog):
         else:
             super().keyPressEvent(event)
 
-    def show_over_tc(self, width: int = 660, height: int = 440):
+    def show_over_tc(self, width: int = 660, height: int = 440, x: int = -1, y: int = -1):
         self.resize(width, height)
-        hwnd = ctypes.windll.user32.FindWindowW('TTOTAL_CMD', None)
-        if hwnd:
-            rc = ctypes.wintypes.RECT()
-            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rc))
-            x = rc.left + (rc.right - rc.left - width) // 2
-            y = rc.top + (rc.bottom - rc.top - height) // 2
+        if x >= 0 and y >= 0:
+            self.move(x, y)
         else:
-            screen = QApplication.primaryScreen().geometry()
-            x = (screen.width() - width) // 2
-            y = (screen.height() - height) // 2
-
-        self.move(x, y)
+            hwnd = ctypes.windll.user32.FindWindowW('TTOTAL_CMD', None)
+            if hwnd:
+                rc = ctypes.wintypes.RECT()
+                ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rc))
+                self.move(
+                    rc.left + (rc.right - rc.left - width) // 2,
+                    rc.top + (rc.bottom - rc.top - height) // 2,
+                )
+            else:
+                screen = QApplication.primaryScreen().geometry()
+                self.move(
+                    (screen.width() - width) // 2,
+                    (screen.height() - height) // 2,
+                )
         self.show()
         self.activateWindow()
         self.raise_()
