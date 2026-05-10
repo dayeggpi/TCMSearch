@@ -50,7 +50,7 @@ class _AboutDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(8)
 
-        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.2</span>')
+        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.3</span>')
         title.setStyleSheet('font-size: 15px; color: #cdd6f4;')
         layout.addWidget(title)
 
