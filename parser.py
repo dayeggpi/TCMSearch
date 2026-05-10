@@ -1,8 +1,10 @@
 import configparser
 import glob
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
+
+from tc_commands import TC_COMMANDS
 
 
 @dataclass
@@ -12,11 +14,16 @@ class Button:
     param: str = ''
     workdir: str = ''
     source_bar: str = ''
-    tooltip: str = ''
+    admin: bool = False
 
     @property
     def display_cmd(self) -> str:
-        return (self.cmd + ' ' + self.param).strip()
+        base = os.path.expandvars((self.cmd + ' ' + self.param).strip())
+        if self.cmd.startswith(('cm_', 'em_')):
+            desc = TC_COMMANDS.get(self.cmd)
+            if desc:
+                return f'{base}  ·  {desc}'
+        return base
 
 
 def _raw_cfg() -> configparser.RawConfigParser:
@@ -84,13 +91,17 @@ def parse_bar_file(bar_path: str) -> list[Button]:
     for i in range(1, count + 1):
         try:
             cmd = cfg.get(section, f'cmd{i}', fallback='').strip()
+            admin = cmd.startswith('*')
+            if admin:
+                cmd = cmd[1:].lstrip()
             if not cmd or cmd.lower().endswith('.bar'):
                 continue
-            menu = cfg.get(section, f'menu{i}', fallback='').strip() or cmd
+            menu = cfg.get(section, f'menu{i}', fallback='').strip()
+            if not menu:
+                menu = TC_COMMANDS.get(cmd, cmd)
             param = cfg.get(section, f'param{i}', fallback='').strip()
             workdir = cfg.get(section, f'path{i}', fallback='').strip()
-            tooltip = cfg.get(section, f'tooltip{i}', fallback='').strip()
-            buttons.append(Button(menu, cmd, param, workdir, bar_name, tooltip))
+            buttons.append(Button(menu, cmd, param, workdir, bar_name, admin))
         except Exception:
             continue
     return buttons

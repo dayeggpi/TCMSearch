@@ -146,6 +146,7 @@ class TCMSearch:
     def _reload_buttons(self):
         self.config.reload()
         tc_path = self.config.get('tc_path')
+        os.environ['COMMANDER_PATH'] = tc_path or ''
         self.buttons = load_all_buttons(tc_path)
         if self.overlay:
             self.overlay.all_buttons = self.buttons

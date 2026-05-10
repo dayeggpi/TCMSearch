@@ -73,10 +73,66 @@ def _run_tc_internal(cmd: str, param: str, tc_path: str):
         _send_wm_copydata(hwnd, cmd, param)
 
 
+class _SHELLEXECUTEINFOW(ctypes.Structure):
+    _fields_ = [
+        ('cbSize',         ctypes.wintypes.DWORD),
+        ('fMask',          ctypes.wintypes.ULONG),
+        ('hwnd',           ctypes.wintypes.HWND),
+        ('lpVerb',         ctypes.wintypes.LPCWSTR),
+        ('lpFile',         ctypes.wintypes.LPCWSTR),
+        ('lpParameters',   ctypes.wintypes.LPCWSTR),
+        ('lpDirectory',    ctypes.wintypes.LPCWSTR),
+        ('nShow',          ctypes.c_int),
+        ('hInstApp',       ctypes.wintypes.HINSTANCE),
+        ('lpIDList',       ctypes.c_void_p),
+        ('lpClass',        ctypes.wintypes.LPCWSTR),
+        ('hkeyClass',      ctypes.wintypes.HKEY),
+        ('dwHotKey',       ctypes.wintypes.DWORD),
+        ('hIconOrMonitor', ctypes.wintypes.HANDLE),
+        ('hProcess',       ctypes.wintypes.HANDLE),
+    ]
+
+_SEE_MASK_ASYNCOK = 0x00100000
+
+
+def _split_cmd_args(cmd: str) -> tuple[str, str]:
+    """Split 'C:\\path\\app.exe arg1 arg2' into (exe, args) for cmds with embedded args."""
+    if os.path.isfile(cmd):
+        return cmd, ''
+    for ext in ('.exe', '.com', '.bat', '.cmd', '.pif', '.scr'):
+        idx = cmd.lower().find(ext + ' ')
+        if idx != -1:
+            split = idx + len(ext)
+            return cmd[:split], cmd[split:].strip()
+    return cmd, ''
+
+
+def _run_as_admin(exe: str, params: str, workdir: str | None) -> None:
+    sei = _SHELLEXECUTEINFOW()
+    sei.cbSize = ctypes.sizeof(sei)
+    sei.fMask = _SEE_MASK_ASYNCOK
+    sei.hwnd = find_tc_hwnd()  # parent UAC dialog to TC window so it comes to front
+    sei.lpVerb = 'runas'
+    sei.lpFile = exe
+    sei.lpParameters = params or None
+    sei.lpDirectory = workdir or None
+    sei.nShow = 1  # SW_SHOWNORMAL
+    ok = ctypes.windll.shell32.ShellExecuteExW(ctypes.byref(sei))
+    if not ok:
+        err = ctypes.windll.kernel32.GetLastError()
+        raise OSError(f'ShellExecuteExW runas failed (error {err})')
+
+
 def execute_button(btn: Button, tc_path: str = ''):
-    cmd = btn.cmd.strip()
-    param = btn.param.strip()
-    workdir = btn.workdir.strip() or None
+    commander_path = tc_path.strip()
+    cmd = btn.cmd.strip().replace('%COMMANDER_PATH%', commander_path)
+    param = btn.param.strip().replace('%COMMANDER_PATH%', commander_path)
+    workdir_raw = btn.workdir.strip()
+    workdir_raw = workdir_raw.replace('%COMMANDER_PATH%', commander_path)
+
+    cmd = os.path.expandvars(cmd)
+    param = os.path.expandvars(param)
+    workdir = os.path.expandvars(workdir_raw) if workdir_raw else None
 
     # Ignore workdir if it doesn't exist (avoid Popen FileNotFoundError)
     if workdir and not os.path.isdir(workdir):
@@ -84,6 +140,13 @@ def execute_button(btn: Button, tc_path: str = ''):
 
     if cmd.lower().startswith(('cm_', 'em_')):
         _run_tc_internal(cmd, param, tc_path)
+        return
+
+    if not param and ' ' in cmd:
+        cmd, param = _split_cmd_args(cmd)
+
+    if btn.admin:
+        _run_as_admin(cmd, param, workdir)
         return
 
     # Pass cmd directly as argv[0] — never shlex-split it, backslashes in
