@@ -50,7 +50,7 @@ class _AboutDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(8)
 
-        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.3</span>')
+        title = QLabel('<b>TCMSearch</b>  <span style="font-size:11px; color:#6c7086;">v0.1.4</span>')
         title.setStyleSheet('font-size: 15px; color: #cdd6f4;')
         layout.addWidget(title)
 
@@ -60,6 +60,19 @@ class _AboutDialog(QDialog):
         link = QLabel('<a href="https://github.com/dayeggpi">github.com/dayeggpi</a>')
         link.setOpenExternalLinks(True)
         layout.addWidget(link)
+
+
+def _ensure_single_instance():
+    mutex = ctypes.windll.kernel32.CreateMutexW(None, False, 'Global\\TCMSearch')
+    if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            'TCMSearch is already running.\nCheck the system tray.',
+            'TCMSearch',
+            0x30,  # MB_ICONWARNING
+        )
+        sys.exit(0)
+    return mutex  # keep handle alive for process lifetime
 
 
 def _resource(name: str) -> Path:
@@ -234,5 +247,6 @@ class TCMSearch:
 
 
 if __name__ == '__main__':
+    _mutex = _ensure_single_instance()
     app = TCMSearch()
     app.run()
